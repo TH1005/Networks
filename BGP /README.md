@@ -184,15 +184,6 @@ router bgp 65001
 
 ---
 
-### 📝 암기 포인트
-
-- **WLLA OMNI** 로 외우는 방식이 있다 (Weight, Local Pref, Locally originated, AS-Path, Origin, MED, Neighbor type, IGP metric)
-- MED는 기본적으로 **같은 이웃 AS에서 온 경로끼리만** 비교한다
-- 1~2번은 **아웃바운드** 제어, 4번(Prepending)과 6번(MED)은 **인바운드** 제어에 주로 쓴다
-- Origin 값이 `?` (Incomplete)인 경우는 보통 redistribute로 들어온 경로이다
-
----
-
 ## 🏷️ Community 속성
 
 - 경로에 **태그(꼬리표)** 를 붙이는 속성. 형식은 `AS번호:값` (예: `65001:100`)
