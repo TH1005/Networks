@@ -62,36 +62,44 @@ BGP는 이러한 정책을 반영하기 위해 **인/아웃바운드 트래픽�
 
 ---
 
-## 🏆 BGP 경로 속성 우선순위
+## 💡 BGP Best Path 선택 순서 (전체)
 
-### 1️⃣ Weight (Cisco 전용)
-- **해당 라우터에만 적용**되며 IGP나 다른 라우터에는 광고되지 않음
-- 외부에서 나에게 들어오는 광고의 우선순위를 정하는 값
-- **값이 높을수록** 트래픽을 내보낼 때 해당 경로를 우선 사용
+> 💡 사전 조건: **Next-Hop에 도달 가능**해야 후보가 된다
 
-### 2️⃣ Local Preference
-- **같은 AS 내의 라우터들에게 광고**됨
-- 외부에서 광고를 받을 때 우선순위를 적용하는 속성
-- **값이 높을수록** 트래픽을 내보낼 때 해당 경로를 우선 사용
+| 순서 | 기준 | 선택 방향 |
+|:---:|---|---|
+| 1 | **Weight** (Cisco 전용) | 높은 값 |
+| 2 | **Local Preference** | 높은 값 |
+| 3 | **로컬에서 생성한 경로** (network, redistribute, aggregate) | 로컬 생성 우선 |
+| 4 | **AS-Path 길이** | 짧은 경로 |
+| 5 | **Origin** | IGP(i) < EGP(e) < Incomplete(?) |
+| 6 | **MED** | 낮은 값 |
+| 7 | **eBGP vs iBGP** | eBGP 우선 |
+| 8 | **Next-Hop까지의 IGP Metric** | 낮은 값 |
+| 9 | **가장 오래된 eBGP 경로** | 안정성 우선 |
+| 10 | **Router ID** | 낮은 값 |
+| 11 | **Cluster List 길이** | 짧은 경로 (Route Reflector 환경) |
+| 12 | **Neighbor IP 주소** | 낮은 값 |
 
-### 3️⃣ AS-Path Prepending
-- 내 라우팅 테이블을 외부로 광고할 때 **의도적으로 AS 경로를 추가** (예: `[100 100 100]`)
-- 경로가 길어 보이게 만들어 상대 라우터에서 들어오는 트래픽이 **다른 경로로 우회**하도록 유도
-
-### 4️⃣ MED (Multi-Exit Discriminator)
-- 인접한 AS에게 여러 경로 중 **특정 경로를 이용하는 것이 좋다**고 광고하는 속성
-- **값이 낮을수록** 더 높은 우선순위
 
 ---
 
-## 📊 요약
+## 📊 Best Path 선택 순서 요약
 
-| 속성 | 적용 범위 | 우선 조건 | 주 용도 |
-|---|---|---|---|
-| **Weight** | 🖥️ 해당 라우터만 | 값 높을수록 | 아웃바운드 제어 |
-| **Local Preference** | 🏠 같은 AS 내부 | 값 높을수록 | 아웃바운드 제어 |
-| **AS-Path Prepending** | 🌍 외부 AS로 광고 | 경로 짧을수록 | 인바운드 제어 |
-| **MED** | 🤝 인접 AS | 값 낮을수록 | 인바운드 제어 |
+| 순서 | 속성 | 적용 범위 | 우선 조건 | 주 용도 |
+|:---:|---|---|---|---|
+| 1 | **Weight** (Cisco 전용) | 🖥️ 해당 라우터만 | 값 높을수록 | 아웃바운드 제어 |
+| 2 | **Local Preference** | 🏠 같은 AS 내부 | 값 높을수록 | 아웃바운드 제어 |
+| 3 | **로컬 생성 경로** | 🖥️ 해당 라우터 | 로컬 생성 우선 | network / redistribute / aggregate로 만든 경로 우선 |
+| 4 | **AS-Path 길이** | 🌍 외부 AS로 광고 | 경로 짧을수록 | 인바운드 제어 (Prepending) |
+| 5 | **Origin** | 🌍 경로 생성 출처 | IGP(i) < EGP(e) < Incomplete(?) | 경로 출처 신뢰도 비교 |
+| 6 | **MED** | 🤝 인접 AS | 값 낮을수록 | 인바운드 제어 |
+| 7 | **eBGP vs iBGP** | 🔀 Peer 종류 | eBGP 우선 | AS 외부로 빠지는 경로 우선 |
+| 8 | **Next-Hop IGP Metric** | 🏠 같은 AS 내부 | 값 낮을수록 | 가까운 출구로 내보내기 (Hot Potato) |
+| 9 | **가장 오래된 eBGP 경로** | 🤝 eBGP Peer | 오래된 경로 우선 | 경로 안정성 (플래핑 방지) |
+| 10 | **Router ID** | 🖥️ Peer 라우터 | 값 낮을수록 | Tie-breaker |
+| 11 | **Cluster List 길이** | 🏠 Route Reflector 환경 | 짧을수록 | Tie-breaker (RR 루프 방지와 연관) |
+| 12 | **Neighbor IP 주소** | 🖥️ Peer 라우터 | 값 낮을수록 | 최종 Tie-breaker |
 
 ---
 
@@ -99,3 +107,163 @@ BGP는 이러한 정책을 반영하기 위해 **인/아웃바운드 트래픽�
 
 - AS-Path Prepending은 속성 자체가 아니라 **AS-Path 길이를 늘리는 기법**이다. 실제 경로 선택 시에는 AS-Path 길이가 짧은 쪽이 우선된다.
 - 위 순서(Weight → Local Pref → AS-Path → MED)는 Best Path 선택 순서와 대체로 일치하지만, 실제로는 사이에 `Origin`, 로컬 생성 경로 우선 등 다른 비교 단계도 존재한다.
+
+
+
+## 📨 BGP 메시지 4종류
+
+| 메시지 | 역할 |
+|---|---|
+| 🤝 **Open** | TCP 연결 후 세션 수립을 위해 가장 먼저 교환. AS 번호, Hold Time, Router ID, 지원 기능(Capability) 협상 |
+| 📢 **Update** | 경로 광고(Advertise)와 경로 철회(Withdraw)를 전달. 경로 속성도 여기에 실려 감 |
+| 💓 **Keepalive** | 세션 유지 확인용. 기본 60초 주기(Hold Time 180초, Cisco 기준) |
+| ❌ **Notification** | 오류 발생 시 전송. 전송 후 세션이 즉시 종료됨 |
+
+- Hold Time 동안 Keepalive/Update가 오지 않으면 Peer가 죽은 것으로 판단하고 세션을 내린다
+- Open 메시지의 Hold Time은 양쪽 값 중 **작은 값**으로 협상된다
+
+---
+
+## 🔄 BGP Peer 상태 (FSM)
+
+```
+Idle → Connect → Active → OpenSent → OpenConfirm → Established
+```
+
+| 상태 | 설명 |
+|---|---|
+| 💤 **Idle** | 초기 상태. 연결 시도 전이거나 오류 후 대기 중 |
+| 🔌 **Connect** | TCP 3-way handshake 완료를 기다리는 중 |
+| 🔁 **Active** | TCP 연결 재시도 중. 연결이 **실패**하고 있다는 의미 |
+| 📤 **OpenSent** | TCP 연결 완료, Open 메시지를 보내고 상대 Open을 기다리는 중 |
+| 📥 **OpenConfirm** | 상대 Open을 받았고 Keepalive를 기다리는 중 |
+| ✅ **Established** | 세션 수립 완료. 이때부터 Update 교환 |
+
+### 🛠️ 트러블슈팅 포인트
+
+- **Active에서 멈춤** (TCP 연결 자체가 안 됨)
+  - Neighbor IP 설정 오류
+  - Peer까지 라우팅 경로 없음
+  - ACL/방화벽에서 **TCP 179** 차단
+- **Idle에서 멈춤**
+  - 설정 오류, 반복 실패로 인한 대기, 또는 neighbor가 shutdown 상태
+- **OpenSent ↔ Idle 반복**
+  - Open 메시지 내용 불일치 (**AS 번호 오류**, 인증 불일치 등)
+- `show ip bgp summary`에서 State/PfxRcd 항목 확인
+  - 숫자가 보이면 Established, `Active`/`Idle` 문자가 보이면 세션 미수립
+
+---
+
+## ➡️ Next-Hop 속성
+
+- 경로 광고 시 **"이 경로로 가려면 이 IP로 보내라"** 를 알려주는 속성
+- **eBGP**로 광고할 때: Next-Hop이 **자기 자신의 IP**로 바뀜
+- **iBGP**로 광고할 때: eBGP에서 받은 경로의 Next-Hop이 **바뀌지 않고 그대로 전달**됨
+
+### ⚠️ 문제 상황
+
+```
+[외부 AS] --eBGP-- [R1] --iBGP-- [R2]
+  Next-Hop: 외부 AS의 IP (R1은 알지만 R2는 모를 수 있음)
+```
+
+- R2가 외부 AS의 Next-Hop IP까지 가는 경로를 모르면 해당 BGP 경로는 **사용 불가(Inaccessible)** 상태가 된다
+- 테이블에 경로는 있는데 `>` (best) 표시가 안 붙는 경우 이 문제를 의심한다
+
+### 🔧 해결책
+
+- R1에서 iBGP Peer에게 **`next-hop-self`** 설정
+  → iBGP로 광고할 때 Next-Hop을 R1 자신의 IP로 바꿔서 전달
+
+```
+router bgp 65001
+ neighbor 10.0.0.2 next-hop-self
+```
+
+- 또는 외부 연결 구간 네트워크를 IGP에 광고하는 방법도 있지만, 보통 `next-hop-self`를 쓴다
+
+---
+
+### 📝 암기 포인트
+
+- **WLLA OMNI** 로 외우는 방식이 있다 (Weight, Local Pref, Locally originated, AS-Path, Origin, MED, Neighbor type, IGP metric)
+- MED는 기본적으로 **같은 이웃 AS에서 온 경로끼리만** 비교한다
+- 1~2번은 **아웃바운드** 제어, 4번(Prepending)과 6번(MED)은 **인바운드** 제어에 주로 쓴다
+- Origin 값이 `?` (Incomplete)인 경우는 보통 redistribute로 들어온 경로이다
+
+---
+
+## 🏷️ Community 속성
+
+- 경로에 **태그(꼬리표)** 를 붙이는 속성. 형식은 `AS번호:값` (예: `65001:100`)
+- 태그를 기준으로 Route-map에서 Local Pref, MED, 필터링 등 정책을 일괄 적용할 수 있다
+- 경로가 많을 때 Prefix를 하나하나 지정하지 않고 **그룹 단위로 정책 관리**가 가능하다
+- Cisco에서는 기본적으로 Peer에게 전달되지 않으므로 **`send-community`** 설정이 필요하다
+
+### Well-known Community
+
+| 값 | 의미 |
+|---|---|
+| `no-export` | eBGP Peer(다른 AS)에게 광고하지 않음 |
+| `no-advertise` | 어떤 Peer에게도 광고하지 않음 |
+| `local-AS` | 로컬 AS 밖으로(Confederation 포함) 광고하지 않음 |
+| `internet` | 제한 없이 광고 |
+
+> 💡 ISP들이 "이 Community 붙이면 Local Pref 올려줌", "이 Community 붙이면 Prepend 해줌" 같은 방식으로 고객에게 정책 제어권을 열어주기도 한다
+
+---
+
+## 🚧 Route Filtering
+
+- 어떤 경로를 **받을지(In) / 보낼지(Out)** 걸러내는 것
+- BGP는 정책 기반이므로 필터링이 사실상 **필수**이다
+
+| 도구 | 용도 |
+|---|---|
+| **Prefix-list** | IP 대역 + 서브넷 길이 기준 필터링 (가장 많이 사용) |
+| **AS-Path ACL** | AS-Path 정규표현식 기준 필터링 |
+| **Route-map** | 조건(match)에 따라 속성 변경(set) 또는 허용/거부. 가장 강력함 |
+| **Distribute-list** | ACL 기반 필터링 (구형 방식) |
+
+### 📌 예시
+
+```
+ip prefix-list ALLOW-ONLY seq 10 permit 203.0.113.0/24
+
+route-map FILTER-OUT permit 10
+ match ip address prefix-list ALLOW-ONLY
+ set local-preference 200
+
+router bgp 65001
+ neighbor 192.0.2.1 route-map FILTER-OUT out
+```
+
+### ⚠️ 필터링을 안 하면?
+
+- 고객/Peer가 잘못 광고한 경로를 그대로 받아서 다른 곳에 퍼뜨릴 수 있다 (**Route Leak**)
+- 사설 IP 대역, 기본 경로(0.0.0.0/0) 등이 의도치 않게 전파될 수 있다
+- 흔히 쓰는 안전장치: **`maximum-prefix`** 로 Peer가 보내는 경로 수 제한
+
+---
+
+## 🔐 BGP 보안 이슈
+
+BGP는 설계 당시 **광고된 경로를 그대로 신뢰**하는 구조라 보안에 취약하다.
+
+### 🏴‍☠️ BGP Hijacking
+
+- 다른 AS가 소유한 IP 대역을 **자기 것인 것처럼 광고**해서 트래픽을 가로채는 공격이다
+- 유형
+  - **Origin 위조**: 남의 Prefix를 자기 AS 시작으로 광고
+  - **More Specific 광고**: 원래 `/22`인 대역을 `/24`로 쪼개 광고 → **Longest Prefix Match** 때문에 더 구체적인 경로가 우선됨
+- 사례: 2008년 파키스탄 ISP가 YouTube 대역을 잘못 광고해 전 세계 YouTube 접속이 장애를 겪음
+
+### 🛡️ 대응 방법
+
+| 방법 | 설명 |
+|---|---|
+| **Prefix Filtering** | 고객/Peer가 광고할 수 있는 Prefix만 허용 |
+| **RPKI / ROA** | Prefix의 정당한 소유 AS를 암호학적으로 검증 (Route Origin Validation) |
+| **MD5 / TCP-AO 인증** | Peer 세션 자체를 인증해 세션 탈취 방지 |
+| **maximum-prefix** | 비정상적으로 많은 경로 유입 차단 |
+| **GTSM (TTL Security)** | 직접 연결된 Peer에서 온 패킷만 허용 (TTL 255 검사) |
