@@ -51,37 +51,39 @@ router bgp 65001
 ```java
 feature bgp
 
+
 interface Ethernet1/1
   no switchport
-  ip address 10.0.11.1/30
+  ip address 10.0.21.2/30
   no shutdown
 
 interface Ethernet1/2
   no switchport
-  ip address 10.0.12.1/30
+  ip address 10.0.22.2/30
   no shutdown
 
 interface Ethernet1/3
   no switchport
-  ip address 20.1.0.1/30
+  ip address 20.2.0.1/30
   no shutdown
 
 interface loopback0
-  ip address 10.255.0.1/32
+  ip address 10.255.0.2/32
 icam monitor scale
 
 ...중략
-router bgp 65001
+router bgp 65002
+  router-id 10.255.0.2
   address-family ipv4 unicast
-    network 10.255.0.1/32
-    network 20.1.0.0/30
-    maximum-paths 2
-  neighbor 10.0.11.2
+    network 10.255.0.2/32
+    network 20.2.0.0/30
+  neighbor 10.0.21.1
     remote-as 65003
     address-family ipv4 unicast
-  neighbor 10.0.12.2
+  neighbor 10.0.22.1
     remote-as 65004
     address-family ipv4 unicast
+
 ```
 
 
