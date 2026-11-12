@@ -1,4 +1,4 @@
-## BGP 맺고 통신하기
+## BGP 설정 후 인접한 AS를 통해서 반대편 AS와 통신하기
 
 **목표**
 1. 이웃 간 BGP 세션을 맺고 루프백을 광고하여 AS65003 또는 AS65004를 통해서 AS65001과 AS65002의 루프백끼리 통신.
@@ -7,6 +7,11 @@
 
 **네트워크 구성도**
 <img width="926" height="521" alt="image" src="https://github.com/user-attachments/assets/e6ff8264-2512-4e79-aa00-66dbf010d57a" />
+
+
+### 1. BGP 맺고 통신하기 인접 AS를 통해서 반대편 AS와 통신하기
+<img width="1453" height="815" alt="image" src="https://github.com/user-attachments/assets/049e60ca-915c-455e-a0a7-6edca61c093e" />
+1번 또는 2번 경로를 통해서 통신
 
 
 **B/B_1 config**
