@@ -7,7 +7,7 @@ BGP는 **서로 다른 AS(Autonomous System)에 속한 라우터 간에 라우�
 > 💡 **AS(Autonomous System)**
 > 전 세계적으로 거대한 인터넷을 구성하는 하나의 독립된 네트워크 단위
 
-### ❓ BGP를 사용하는 이유
+### 📌 BGP를 사용하는 이유
 
 | 이유 | 설명 |
 |---|---|
@@ -16,7 +16,7 @@ BGP는 **서로 다른 AS(Autonomous System)에 속한 라우터 간에 라우�
 
 ---
 
-## ⚙️ BGP 동작 방식
+## 📌 BGP 동작 방식
 
 - 🔌 **TCP 179번 포트**로 Peer 간 세션을 맺음
 - 💓 주기적으로 **Keepalive**를 보내 세션 상태를 확인
@@ -24,11 +24,11 @@ BGP는 **서로 다른 AS(Autonomous System)에 속한 라우터 간에 라우�
 
 ---
 
-## 🧭 경로벡터(Path Vector) 알고리즘
+## 📌 경로벡터(Path Vector) 알고리즘
 
 BGP는 **거리벡터(Distance Vector) 알고리즘을 뼈대**로 하는 **경로벡터(Path Vector) 알고리즘**을 사용한다.
 
-### 🔁 전체 경로 목록을 들고 다니는 이유: 라우팅 루프 방지
+### 📌 전체 경로 목록을 들고 다니는 이유: 라우팅 루프 방지
 
 A, B, C 라우터가 있고 A가 **X 네트워크**를 광고한다고 가정하면,
 
@@ -42,12 +42,12 @@ A, B, C 라우터가 있고 A가 **X 네트워크**를 광고한다고 가정하
 C → B → A → C → B → A → ...  (TTL이 0이 될 때까지 무한 루프 🔄)
 ```
 
-### 🛡️ BGP의 해결책
+### 📌 BGP의 해결책
 
 > 광고 패킷을 받았을 때 **AS Path에 내 AS 번호가 이미 있다면 그대로 Drop**
 > → 루프가 원천 차단된다 ✅
 
-## 💼 BGP는 "정책"으로 움직인다
+## 📌 BGP는 "정책"으로 움직인다
 
 | 구분 | 선택 기준 |
 |---|---|
@@ -62,7 +62,7 @@ BGP는 이러한 정책을 반영하기 위해 **인/아웃바운드 트래픽�
 
 ---
 
-## 💡 BGP Best Path 선택 순서 (전체)
+## 📌 BGP Best Path 선택 순서 (전체)
 
 > 💡 사전 조건: **Next-Hop에 도달 가능**해야 후보가 된다
 
@@ -84,7 +84,7 @@ BGP는 이러한 정책을 반영하기 위해 **인/아웃바운드 트래픽�
 
 ---
 
-## 📊 Best Path 선택 순서 요약
+## 📌 Best Path 선택 순서 요약
 
 | 순서 | 속성 | 적용 범위 | 우선 조건 | 주 용도 |
 |:---:|---|---|---|---|
@@ -103,14 +103,14 @@ BGP는 이러한 정책을 반영하기 위해 **인/아웃바운드 트래픽�
 
 ---
 
-### 📝 참고
+### 📌 참고
 
 - AS-Path Prepending은 속성 자체가 아니라 **AS-Path 길이를 늘리는 기법**이다. 실제 경로 선택 시에는 AS-Path 길이가 짧은 쪽이 우선된다.
 - 위 순서(Weight → Local Pref → AS-Path → MED)는 Best Path 선택 순서와 대체로 일치하지만, 실제로는 사이에 `Origin`, 로컬 생성 경로 우선 등 다른 비교 단계도 존재한다.
 
 
 
-## 📨 BGP 메시지 4종류
+## 📌 BGP 메시지 4종류
 
 | 메시지 | 역할 |
 |---|---|
@@ -124,7 +124,7 @@ BGP는 이러한 정책을 반영하기 위해 **인/아웃바운드 트래픽�
 
 ---
 
-## 🔄 BGP Peer 상태 (FSM)
+## 📌 BGP Peer 상태 (FSM)
 
 ```
 Idle → Connect → Active → OpenSent → OpenConfirm → Established
@@ -139,7 +139,7 @@ Idle → Connect → Active → OpenSent → OpenConfirm → Established
 | 📥 **OpenConfirm** | 상대 Open을 받았고 Keepalive를 기다리는 중 |
 | ✅ **Established** | 세션 수립 완료. 이때부터 Update 교환 |
 
-### 🛠️ 트러블슈팅 포인트
+### 📌 트러블슈팅 포인트
 
 - **Active에서 멈춤** (TCP 연결 자체가 안 됨)
   - Neighbor IP 설정 오류
@@ -154,13 +154,13 @@ Idle → Connect → Active → OpenSent → OpenConfirm → Established
 
 ---
 
-## ➡️ Next-Hop 속성
+## 📌 Next-Hop 속성
 
 - 경로 광고 시 **"이 경로로 가려면 이 IP로 보내라"** 를 알려주는 속성
 - **eBGP**로 광고할 때: Next-Hop이 **자기 자신의 IP**로 바뀜
 - **iBGP**로 광고할 때: eBGP에서 받은 경로의 Next-Hop이 **바뀌지 않고 그대로 전달**됨
 
-### ⚠️ 문제 상황
+### 📌 문제 상황
 
 ```
 [외부 AS] --eBGP-- [R1] --iBGP-- [R2]
