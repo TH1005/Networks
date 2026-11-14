@@ -11,16 +11,16 @@ BGP는 **서로 다른 AS(Autonomous System)에 속한 라우터 간에 라우�
 
 | 이유 | 설명 |
 |---|---|
-| 📈 **확장성** | 수십만 개에 달하는 전 세계 인터넷 경로를 OSPF 같은 내부 라우팅 프로토콜(IGP)로 처리하기에는 한계가 있음 |
-| 🎛️ **정책 기반 제어** | 통신사·기업 간의 **비용, 보안 정책**에 따라 경로를 유연하게 제어(Policy-Based Routing)해야 함 |
+|  **확장성** | 수십만 개에 달하는 전 세계 인터넷 경로를 OSPF 같은 내부 라우팅 프로토콜(IGP)로 처리하기에는 한계가 있음 |
+|  **정책 기반 제어** | 통신사·기업 간의 **비용, 보안 정책**에 따라 경로를 유연하게 제어(Policy-Based Routing)해야 함 |
 
 ---
 
 ## 📌 BGP 동작 방식
 
-- 🔌 **TCP 179번 포트**로 Peer 간 세션을 맺음
-- 💓 주기적으로 **Keepalive**를 보내 세션 상태를 확인
-- 🚨 세션이 끊기면 다른 Peer들에게도 **Update 패킷**을 전송해 최신 경로로 갱신
+-  **TCP 179번 포트**로 Peer 간 세션을 맺음
+-  주기적으로 **Keepalive**를 보내 세션 상태를 확인
+-  세션이 끊기면 다른 Peer들에게도 **Update 패킷**을 전송해 최신 경로로 갱신
 
 ---
 
@@ -51,8 +51,8 @@ C → B → A → C → B → A → ...  (TTL이 0이 될 때까지 무한 루�
 
 | 구분 | 선택 기준 |
 |---|---|
-| 🏃 **IGP (내부)** | 가장 **가깝고 빠른** 경로 |
-| 🏢 **BGP (외부)** | **관리자의 정책** (비즈니스 계약, 회선 비용, 보안) |
+|  **IGP (내부)** | 가장 **가깝고 빠른** 경로 |
+|  **BGP (외부)** | **관리자의 정책** (비즈니스 계약, 회선 비용, 보안) |
 
 > **예시**
 > A 통신사의 1번 회선이 물리적으로 1홉으로 짧지만 비용이 2배라면,
@@ -88,18 +88,18 @@ BGP는 이러한 정책을 반영하기 위해 **인/아웃바운드 트래픽�
 
 | 순서 | 속성 | 적용 범위 | 우선 조건 | 주 용도 |
 |:---:|---|---|---|---|
-| 1 | **Weight** (Cisco 전용) | 🖥️ 해당 라우터만 | 값 높을수록 | 아웃바운드 제어 |
-| 2 | **Local Preference** | 🏠 같은 AS 내부 | 값 높을수록 | 아웃바운드 제어 |
-| 3 | **로컬 생성 경로** | 🖥️ 해당 라우터 | 로컬 생성 우선 | network / redistribute / aggregate로 만든 경로 우선 |
-| 4 | **AS-Path 길이** | 🌍 외부 AS로 광고 | 경로 짧을수록 | 인바운드 제어 (Prepending) |
-| 5 | **Origin** | 🌍 경로 생성 출처 | IGP(i) < EGP(e) < Incomplete(?) | 경로 출처 신뢰도 비교 |
-| 6 | **MED** | 🤝 인접 AS | 값 낮을수록 | 인바운드 제어 |
-| 7 | **eBGP vs iBGP** | 🔀 Peer 종류 | eBGP 우선 | AS 외부로 빠지는 경로 우선 |
-| 8 | **Next-Hop IGP Metric** | 🏠 같은 AS 내부 | 값 낮을수록 | 가까운 출구로 내보내기 (Hot Potato) |
-| 9 | **가장 오래된 eBGP 경로** | 🤝 eBGP Peer | 오래된 경로 우선 | 경로 안정성 (플래핑 방지) |
-| 10 | **Router ID** | 🖥️ Peer 라우터 | 값 낮을수록 | Tie-breaker |
-| 11 | **Cluster List 길이** | 🏠 Route Reflector 환경 | 짧을수록 | Tie-breaker (RR 루프 방지와 연관) |
-| 12 | **Neighbor IP 주소** | 🖥️ Peer 라우터 | 값 낮을수록 | 최종 Tie-breaker |
+| 1 | **Weight** (Cisco 전용) |  해당 라우터만 | 값 높을수록 | 아웃바운드 제어 |
+| 2 | **Local Preference** |  같은 AS 내부 | 값 높을수록 | 아웃바운드 제어 |
+| 3 | **로컬 생성 경로** |  해당 라우터 | 로컬 생성 우선 | network / redistribute / aggregate로 만든 경로 우선 |
+| 4 | **AS-Path 길이** |  외부 AS로 광고 | 경로 짧을수록 | 인바운드 제어 (Prepending) |
+| 5 | **Origin** |  경로 생성 출처 | IGP(i) < EGP(e) < Incomplete(?) | 경로 출처 신뢰도 비교 |
+| 6 | **MED** |  인접 AS | 값 낮을수록 | 인바운드 제어 |
+| 7 | **eBGP vs iBGP** |  Peer 종류 | eBGP 우선 | AS 외부로 빠지는 경로 우선 |
+| 8 | **Next-Hop IGP Metric** |  같은 AS 내부 | 값 낮을수록 | 가까운 출구로 내보내기 (Hot Potato) |
+| 9 | **가장 오래된 eBGP 경로** |  eBGP Peer | 오래된 경로 우선 | 경로 안정성 (플래핑 방지) |
+| 10 | **Router ID** |  Peer 라우터 | 값 낮을수록 | Tie-breaker |
+| 11 | **Cluster List 길이** |  Route Reflector 환경 | 짧을수록 | Tie-breaker (RR 루프 방지와 연관) |
+| 12 | **Neighbor IP 주소** |  Peer 라우터 | 값 낮을수록 | 최종 Tie-breaker |
 
 ---
 
@@ -114,10 +114,10 @@ BGP는 이러한 정책을 반영하기 위해 **인/아웃바운드 트래픽�
 
 | 메시지 | 역할 |
 |---|---|
-| 🤝 **Open** | TCP 연결 후 세션 수립을 위해 가장 먼저 교환. AS 번호, Hold Time, Router ID, 지원 기능(Capability) 협상 |
-| 📢 **Update** | 경로 광고(Advertise)와 경로 철회(Withdraw)를 전달. 경로 속성도 여기에 실려 감 |
-| 💓 **Keepalive** | 세션 유지 확인용. 기본 60초 주기(Hold Time 180초, Cisco 기준) |
-| ❌ **Notification** | 오류 발생 시 전송. 전송 후 세션이 즉시 종료됨 |
+|  **Open** | TCP 연결 후 세션 수립을 위해 가장 먼저 교환. AS 번호, Hold Time, Router ID, 지원 기능(Capability) 협상 |
+|  **Update** | 경로 광고(Advertise)와 경로 철회(Withdraw)를 전달. 경로 속성도 여기에 실려 감 |
+|  **Keepalive** | 세션 유지 확인용. 기본 60초 주기(Hold Time 180초, Cisco 기준) |
+|  **Notification** | 오류 발생 시 전송. 전송 후 세션이 즉시 종료됨 |
 
 - Hold Time 동안 Keepalive/Update가 오지 않으면 Peer가 죽은 것으로 판단하고 세션을 내린다
 - Open 메시지의 Hold Time은 양쪽 값 중 **작은 값**으로 협상된다
@@ -132,12 +132,12 @@ Idle → Connect → Active → OpenSent → OpenConfirm → Established
 
 | 상태 | 설명 |
 |---|---|
-| 💤 **Idle** | 초기 상태. 연결 시도 전이거나 오류 후 대기 중 |
-| 🔌 **Connect** | TCP 3-way handshake 완료를 기다리는 중 |
-| 🔁 **Active** | TCP 연결 재시도 중. 연결이 **실패**하고 있다는 의미 |
-| 📤 **OpenSent** | TCP 연결 완료, Open 메시지를 보내고 상대 Open을 기다리는 중 |
-| 📥 **OpenConfirm** | 상대 Open을 받았고 Keepalive를 기다리는 중 |
-| ✅ **Established** | 세션 수립 완료. 이때부터 Update 교환 |
+|  **Idle** | 초기 상태. 연결 시도 전이거나 오류 후 대기 중 |
+|  **Connect** | TCP 3-way handshake 완료를 기다리는 중 |
+|  **Active** | TCP 연결 재시도 중. 연결이 **실패**하고 있다는 의미 |
+|  **OpenSent** | TCP 연결 완료, Open 메시지를 보내고 상대 Open을 기다리는 중 |
+|  **OpenConfirm** | 상대 Open을 받았고 Keepalive를 기다리는 중 |
+|  **Established** | 세션 수립 완료. 이때부터 Update 교환 |
 
 ### 📌 트러블슈팅 포인트
 
