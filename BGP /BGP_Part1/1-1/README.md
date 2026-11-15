@@ -1,5 +1,5 @@
 
-### 1. BGP 맺고 통신하기 인접 AS를 통해서 반대편 AS와 통신하기
+### 1. BGP 세션 구성 및 통신 테스트
 <img width="1453" height="815" alt="image" src="https://github.com/user-attachments/assets/049e60ca-915c-455e-a0a7-6edca61c093e" />
 AS65001 루프백 IP가 1번 또는 2번 경로를 통해서 루프백 IP를 인접 AS에게 광고하여 AS65002 라우터의 루프백과 통신을 시도
 
