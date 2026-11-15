@@ -362,7 +362,7 @@ Codes: C - connected, S - static, K - kernel,
 
  B E      10.0.12.0/30 [200/0] via 10.0.11.1, Ethernet1
  B E      10.0.22.0/30 [200/0] via 10.0.11.1, Ethernet1
- B E      10.255.0.1/32 [200/0] via 10.0.21.2, Ethernet2 #AS65002 -> AS65004 -> AS65001로 경로가 잡힘
+ B E      10.255.0.1/32 [200/0] via 10.0.21.2, Ethernet2 //AS65002 -> AS65004 -> AS65001로 경로가 잡힘
  B E      10.255.0.2/32 [200/0] via 10.0.21.2, Ethernet2
  B E      10.255.0.4/32 [200/0] via 10.0.11.1, Ethernet1
  B E      20.1.0.0/30 [200/0] via 10.0.11.1, Ethernet1
