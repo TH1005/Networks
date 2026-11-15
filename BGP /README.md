@@ -170,7 +170,7 @@ Idle → Connect → Active → OpenSent → OpenConfirm → Established
 - R2가 외부 AS의 Next-Hop IP까지 가는 경로를 모르면 해당 BGP 경로는 **사용 불가(Inaccessible)** 상태가 된다
 - 테이블에 경로는 있는데 `>` (best) 표시가 안 붙는 경우 이 문제를 의심한다
 
-### 🔧 해결책
+### 📌 해결책
 
 - R1에서 iBGP Peer에게 **`next-hop-self`** 설정
   → iBGP로 광고할 때 Next-Hop을 R1 자신의 IP로 바꿔서 전달
@@ -184,7 +184,7 @@ router bgp 65001
 
 ---
 
-## 🏷️ Community 속성
+## 📌 Community 속성
 
 - 경로에 **태그(꼬리표)** 를 붙이는 속성. 형식은 `AS번호:값` (예: `65001:100`)
 - 태그를 기준으로 Route-map에서 Local Pref, MED, 필터링 등 정책을 일괄 적용할 수 있다
@@ -229,7 +229,7 @@ router bgp 65001
  neighbor 192.0.2.1 route-map FILTER-OUT out
 ```
 
-### ⚠️ 필터링을 안 하면?
+### 📌 필터링을 안 하면?
 
 - 고객/Peer가 잘못 광고한 경로를 그대로 받아서 다른 곳에 퍼뜨릴 수 있다 (**Route Leak**)
 - 사설 IP 대역, 기본 경로(0.0.0.0/0) 등이 의도치 않게 전파될 수 있다
@@ -237,7 +237,7 @@ router bgp 65001
 
 ---
 
-## 🔐 BGP 보안 이슈
+## 📌 BGP 보안 이슈
 
 BGP는 설계 당시 **광고된 경로를 그대로 신뢰**하는 구조라 보안에 취약하다.
 
@@ -249,7 +249,7 @@ BGP는 설계 당시 **광고된 경로를 그대로 신뢰**하는 구조라 �
   - **More Specific 광고**: 원래 `/22`인 대역을 `/24`로 쪼개 광고 → **Longest Prefix Match** 때문에 더 구체적인 경로가 우선됨
 - 사례: 2008년 파키스탄 ISP가 YouTube 대역을 잘못 광고해 전 세계 YouTube 접속이 장애를 겪음
 
-### 🛡️ 대응 방법
+### 📌 대응 방법
 
 | 방법 | 설명 |
 |---|---|
