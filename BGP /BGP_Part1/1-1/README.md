@@ -1,7 +1,7 @@
 
 ### 1. BGP 세션 구성 및 통신 테스트
 <img width="1453" height="815" alt="image" src="https://github.com/user-attachments/assets/049e60ca-915c-455e-a0a7-6edca61c093e" />
-AS65001 루프백 IP가 1번 또는 2번 경로를 통해서 루프백 IP를 인접 AS에게 광고하여 AS65002 라우터의 루프백과 통신을 시도
+AS65001 루프백 IP를 1번 또는 2번 경로를 통해서 인접 AS에게 광고하여 AS65002 라우터의 루프백과 통신을 시도
 
 <br>
 <br>
@@ -188,61 +188,47 @@ Neighbor        V    AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
 10.0.21.1       4 65003      23      14       62    0    0 00:06:19 9         
 10.0.22.1       4 65004      15      10       62    0    0 00:06:22 9
 ```
-
 <img width="913" height="170" alt="image" src="https://github.com/user-attachments/assets/27041158-f185-46e5-b301-e53b5c404e74" />
-AS65001와 AS65002의 BGP summary를 보면 AS65003과 AS65004의 인터페이스와 BGP 세션을 정상적으로 맺고 있으며, 일정 주기마다 BGP Keppalive 패킷을 주고 받아서 세션을 유지하고 있다.
+AS65001와 AS65002의 BGP summary를 보면 AS65003과 AS65004의 인터페이스와 BGP 세션을 정상적으로 맺고 있으며, 일정 주기마다 BGP Keepalive 패킷을 주고 받아서 세션을 유지하고 있다.
 
 <br>
 
 #### 라우팅 테이블 확인
 ```java
-BB-1# show ip route bgp
+BB-1# show ip route 10.255.0.2 
 IP Route Table for VRF "default"
 '*' denotes best ucast next-hop
 '**' denotes best mcast next-hop
 '[x/y]' denotes [preference/metric]
 '%<string>' in via output denotes VRF <string>
 
-10.0.13.0/30, ubest/mbest: 1/0
-    *via 10.0.11.2, [20/0], 00:00:47, bgp-65001, external, tag 65003
-10.0.21.0/30, ubest/mbest: 1/0
-    *via 10.0.11.2, [20/0], 00:04:24, bgp-65001, external, tag 65003
-10.0.22.0/30, ubest/mbest: 1/0
-    *via 10.0.12.2, [20/0], 00:00:18, bgp-65001, external, tag 65004
 10.255.0.2/32, ubest/mbest: 1/0
-    *via 10.0.11.2, [20/0], 00:00:47, bgp-65001, external, tag 65003
-10.255.0.3/32, ubest/mbest: 1/0
-    *via 10.0.11.2, [20/0], 00:04:24, bgp-65001, external, tag 65003
-10.255.0.4/32, ubest/mbest: 1/0
-    *via 10.0.12.2, [20/0], 00:00:18, bgp-65001, external, tag 65004
-20.2.0.0/30, ubest/mbest: 1/0
-    *via 10.0.11.2, [20/0], 00:00:47, bgp-65001, external, tag 65003
+    *via 10.0.11.2, [20/0], 00:02:06, bgp-65001, external, tag 65003
 
 --------------------------------------------------------------------------
 
-BB-2# show ip route bgp
+BB-2# show ip route 10.255.0.1
 IP Route Table for VRF "default"
 '*' denotes best ucast next-hop
 '**' denotes best mcast next-hop
 '[x/y]' denotes [preference/metric]
 '%<string>' in via output denotes VRF <string>
 
-10.0.11.0/30, ubest/mbest: 1/0
-    *via 10.0.21.1, [20/0], 00:23:34, bgp-65002, external, tag 65003
-10.0.12.0/30, ubest/mbest: 1/0
-    *via 10.0.22.1, [20/0], 00:23:36, bgp-65002, external, tag 65004
-10.0.13.0/30, ubest/mbest: 1/0
-    *via 10.0.22.1, [20/0], 00:23:36, bgp-65002, external, tag 65004
 10.255.0.1/32, ubest/mbest: 1/0
-    *via 10.0.21.1, [20/0], 00:01:25, bgp-65002, external, tag 65003
-10.255.0.3/32, ubest/mbest: 1/0
-    *via 10.0.21.1, [20/0], 00:23:34, bgp-65002, external, tag 65003
-10.255.0.4/32, ubest/mbest: 1/0
-    *via 10.0.22.1, [20/0], 00:23:36, bgp-65002, external, tag 65004
-20.1.0.0/30, ubest/mbest: 1/0
-    *via 10.0.21.1, [20/0], 00:01:25, bgp-65002, external, tag 65003
+    *via 10.0.21.1, [20/0], 00:04:16, bgp-65002, external, tag 65003
 ```
-
+**라우팅 테이블의 내용**
+- **10.255.0.1/32** : 목적지 네트워크 주소
+- **ubest/mbest** : 유니캐스트/멀티캐스트의 최적 경로 (현재 유니캐스트 최적 경로 1개 있음)
+- **via** : Next-Hop
+- **[20/0]** : [AD/Metric] 값으로, eBgp로 생성한 라우팅 테이블의 기본 AD 값이다. (OSPF : 110, iBGP : 200 등)
+- **00:04:16** 라우팅 테이블에 등록된 시간
+- **bgp-65002** : 현재 로컬AS 번호
+- **external** : 외부 AS랑 BGP를 맺었다는 뜻
+- **tag 65003** : 상대 AS 번호를 기록 (루핑 방지 목적)
+ 
+<br>
+  
 AS65001과 AS65002를 보면 서로의 루프백으로 위한 라우팅을 AS65003 방향으로 잡고 있다. BGP 같은 경우는 아무런 정책이 없을 때는 AS-Path경로가 짧은 쪽을 우선으로 선정하게 되어있다. 만약 경로 비용이 같다면 아래 4가지를 통해서 Best Path를 선정한다.
 1. Origin Code : IGP (i) > EGP (e) > Incomplete (?) 순으로 우선순위를 가짐.
 2. 가장 낮은 MED (Metric): 인접 AS에서 넘겨준 메트릭 값이 낮은 쪽을 선택.
