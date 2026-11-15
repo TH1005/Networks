@@ -290,28 +290,50 @@ ed nexthop
 
 #### 통신 시도하기
 ```java
-BB-1# traceroute 10.255.0.2
-traceroute to 10.255.0.2 (10.255.0.2), 30 hops max, 40 byte packets
- 1  10.0.11.2 (10.0.11.2) (AS 65003)  10.036 ms  8.199 ms  7.82 ms
- 2  10.255.0.2 (10.255.0.2) (AS 65002)  35.027 ms  16.403 ms  21.479 ms
+BB-1# trace 10.255.0.2 source 10.255.0.1
+traceroute to 10.255.0.2 (10.255.0.2) from 10.255.0.1 (10.255.0.1), 30 hops max, 40 byte packets
+ 1  10.0.11.2 (10.0.11.2) (AS 65003)  12.223 ms  10.831 ms  7.793 ms
+ 2  10.255.0.2 (10.255.0.2) (AS 65002)  18.831 ms  18.753 ms  18.235 ms
 ```
 B/B_1에서 traceroute로 AS65002의 루프백과 통신을 시도하면 라우팅 테이블에 학습된 대로 10.0.11.2(AS65003) 방향으로 통신이되는 것을 확인 할 수 있다.
 
 
 
-#### 경로 업데이트
-BGP는 라우팅 경로에 이상이 감지되면 변경된 정보만을 담은 UPDATE 패킷을 인접 피어(Peer)에게 즉시 송신하여 경로를 갱신(철회 또는 우회 경로 재광고)한다.
+#### 백업 경로 업데이트
+BGP는 Best Path였던 경로가 다운되면 즉시 가지고 있었던 백업 경로를 Best Path로 승격 시키고 라우팅 테이블을 수정한다. 이 승격된 경로는 여러개의 출구 중 하나를 승격 시킨것이기 때문에 별도로 외부 AS 라우터에게 광고를 하지 않는다.
 
-<img width="1332" height="552" alt="image" src="https://github.com/user-attachments/assets/2423cbeb-9731-411c-a315-bac49b90d3c2" />
-현재 AS65003 방향으로가는 링크를 끊어버린 후 AS65002의 루프백 IP로 가는 경로를 업데이트 메세지로 AS65004 방향으로 다시 업데이트 받았다.
+```
+BB-1# show ip bgp 10.255.0.2
+BGP routing table information for VRF default, address family IPv4 Unicast
+BGP routing table entry for 10.255.0.2/32, version 191
+Paths: (1 available, best #1)
+Flags: (0x8008001a) (high32 00000000) on xmit-list, is in urib, is best urib rou
+te, is in HW
+
+  Advertised path-id 1
+  Path type: external, path is valid, is best path, no labeled nexthop, in rib
+  AS-Path: 65004 65002 , path sourced external to AS
+    10.0.12.2 (metric 0) from 10.0.12.2 (10.255.0.4)
+      Origin IGP, MED not set, localpref 100, weight 0
+
+  Path-id 1 not advertised to any peer
+```
 
 ```java
-BB-1# traceroute 10.255.0.2
+BB-1# traceroute 10.255.0.2 source 10.255.0.1
 traceroute to 10.255.0.2 (10.255.0.2), 30 hops max, 40 byte packets
  1  10.0.12.2 (10.0.12.2) (AS 65004)  12.257 ms  7.793 ms  9.096 ms
  2  10.255.0.2 (10.255.0.2) (AS 65002)  14.877 ms  14.562 ms  13.054 ms
 ```
-다시 통신을 시도해보면 이번에는 10.0.12.2(AS65004) 방향으로 트래픽이 흐른것을 볼 수 있다.
+AS65003 방향의 링크를 끊은 뒤 Best Path가 AS65004 방향으로 잡혀있고 AS65003 방향 경로는 사라진것을 확인 할 수 있다.
+다시 trace를 통해서 테스트를 해보면 10.0.12.2(AS65004) 방향으로 트래픽이 흐른것을 볼 수 있다.
 
+<br>
 
+<img width="810" height="595" alt="image" src="https://github.com/user-attachments/assets/50bf7407-1c9c-4920-97b9-9bb95f0ded43" />
+또한 ROUTER_1은 B/B_1과 맺고 있던 세션이 끊겼기 때문에 `10.255.0.1 via 10.0.11.1` 라우팅을 삭제 한다. 또한 라우팅 테이블이 수정 되었기 때문에 이 내용을 B/B_2에게 10.255.0.1로 가기 위해서 AS65003을 통하는 경로를 철회하라고 업데이트 패킷 보낸다.
 
+<br>
+<img width="799" height="686" alt="image" src="https://github.com/user-attachments/assets/a8f4b8c6-ebd6-4d87-962f-4fc0acda517c" />
+ROUTER_1이 보낸 업데이트에 대해서 B/B_2도 경로를 수정하며 새로 찾은 경로를 다시 ROUTER_1에게 광고하고 있는 것을 확인할 수 있다.
+경로 속성을 보면 65002 65004 65001을 통하는 경로이고, 네트워크 대역은 10.255.0.1/32, 20.1.0.0/30로 B/B_1 의 네트워크로 가기 위한 경로이다.
