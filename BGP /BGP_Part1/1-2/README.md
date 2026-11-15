@@ -245,7 +245,7 @@ est2
    Network            Next Hop            Metric     LocPrf     Weight Path
 *>e10.0.12.0/30       10.0.12.2                                      0 65004 i # 외부피어에게 학습한 경로는 weight 0, i : IGP
 *>e10.0.22.0/30       10.0.12.2                                      0 65004 i
-*>l10.255.0.1/32      0.0.0.0                           100      32768 i       # 내가 만든 경로는 32786 weight 값을 가
+*>l10.255.0.1/32      0.0.0.0                           100      32768 i       # 내가 만든 경로는 32786 weight 값을 가짐
 *>e10.255.0.4/32      10.0.12.2                                      0 65004 i
 *>l20.1.0.0/30        0.0.0.0                           100      32768 i
 
@@ -281,10 +281,116 @@ B/B_1이 피어링을 맺은 10.0.11.2에게 확인을 해보면
 - *>l10.255.0.1/32      0.0.0.0                           100      32768 i
 - *>l20.1.0.0/30        0.0.0.0                           100      32768 i
 로컬 네트워크(l로 표기) 대역이 정상적으로 광고 되고 있음을 확인할 수 있다. LocalPref는 시스코의 기본 값인 100으로 설정 된다. 로컬 경로임에도 설정되는 이유는 BGP 표준에 따라 유효한 경로를 BGP 테이블에 올리기 위해서는 무조건 LocalPreference 값을 가져야한다.
-32768은 현재 장비에서 직접 만든 경로에 할당 되는 것이다. 
+로컬 네트워크가 weight 32768이 설정 되는 이유는 BGP는 weight 값을 가장 우선순위로 고려하는데 이때 로컬 네트워크로 통신하는 라우팅이 다른 AS에게 광고받은 경로보다 weight값이 낮게 되면 로컬 네트워크임에도 다른 AS를 우회할 수 있기 때문에 로컬 대역은 항상 최우선으로 잡는 것이다. 
 
 ROUTER_1의 라우팅 테이블을 보면 10.255.0.1, 20.1.0.0/30에 대한 Next-Hop이 모두 B/B_1(AS65001) 방향이로 설정 되어있다.
 별도의 정책을 설정하지 않았기 때문에 B/B_1에게 직접 광고 받고 라우팅 테이블을 갱신한것이다.
+
+---
+
+## 5. 라우팅 필터링 정책 추가
+### B/B_1 Config 추가
+
+```java
+ip prefix-list BLOCK_To_65003 seq 10 permit 10.255.0.1/32
+
+route-map MAP_TO_65003 deny 10
+  match ip address prefix-list BLOCK_To_65003 
+route-map MAP_TO_65003 permit 20
+
+router bgp 65001
+  address-family ipv4 unicast
+    network 10.255.0.1/32
+    network 20.1.0.0/30
+  neighbor 10.0.11.2
+    remote-as 65003
+    address-family ipv4 unicast
+      route-map MAP_TO_65003 out
+  neighbor 10.0.12.2
+    remote-as 65004
+    address-family ipv4 unicast
+
+```
+
+### 📝 설정 설명
+
+| 순서 | 명령어 | 설명 |
+|:----:|--------|------|
+| 1 | `ip prefix-list BLOCK_To_65003 seq 10 permit 10.255.0.1/32` | 정책에서 매칭할 대상(`10.255.0.1/32`)을 정의하는 **prefix-list** 생성 |
+| 2 | `route-map MAP_TO_65003 deny 10` | 광고 정책의 **첫 번째 규칙(seq 10)**. 조건에 매칭되는 경로를 **차단(deny)** |
+| 3 | `match ip address prefix-list BLOCK_To_65003` | seq 10의 매칭 조건으로 위 prefix-list 지정. 즉 `10.255.0.1/32`만 차단 대상 |
+| 4 | `route-map MAP_TO_65003 permit 20` | 매칭 조건이 없으므로 **나머지 모든 경로를 허용**. 없으면 route-map 끝의 **암묵적 deny** 때문에 나머지 경로도 전부 광고되지 않음 |
+| 5 | `route-map MAP_TO_65003 out` | 10.0.11.2(AS65003) 이웃에게 **광고(out)할 때** 해당 route-map 적용 |
+
+
+### 설정 적용 후 B/B_1 광고 내역
+```java
+BB-1# show ip bgp neighbors 10.0.11.2 advertised-routes 
+
+Peer 10.0.11.2 routes for address family IPv4 Unicast:
+BGP table version is 264, Local Router ID is 10.255.0.1
+Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
+Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-i
+njected
+Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - b
+est2
+
+   Network            Next Hop            Metric     LocPrf     Weight Path
+*>e10.0.12.0/30       10.0.12.2                                      0 65004 i
+*>e10.0.22.0/30       10.0.12.2                                      0 65004 i
+*>e10.255.0.4/32      10.0.12.2                                      0 65004 i
+*>l20.1.0.0/30        0.0.0.0                           100      32768 i
+```
+10.255.0.1을 광고하지 않는 정책을 설정 후 라우팅 광고 내역을 보면 10.255.0.1은 10.0.11.2(AS65003)에게 광고하지 않는 것으로 확인할 수 있다.
+
+### 수정된 ROUTER_1 라우팅 테이블
+```java
+ROUTER-1#show ip route bgp
+
+VRF: default
+Codes: C - connected, S - static, K - kernel, 
+       O - OSPF, IA - OSPF inter area, E1 - OSPF external type 1,
+       E2 - OSPF external type 2, N1 - OSPF NSSA external type 1,
+       N2 - OSPF NSSA external type2, B - Other BGP Routes,
+       B I - iBGP, B E - eBGP, R - RIP, I L1 - IS-IS level 1,
+       I L2 - IS-IS level 2, O3 - OSPFv3, A B - BGP Aggregate,
+       A O - OSPF Summary, NG - Nexthop Group Static Route,
+       V - VXLAN Control Service, M - Martian,
+       DH - DHCP client installed default route,
+       DP - Dynamic Policy Route, L - VRF Leaked,
+       G  - gRIBI, RC - Route Cache Route
+
+ B E      10.0.12.0/30 [200/0] via 10.0.11.1, Ethernet1
+ B E      10.0.22.0/30 [200/0] via 10.0.11.1, Ethernet1
+ B E      10.255.0.1/32 [200/0] via 10.0.21.2, Ethernet2 #AS65002 -> AS65004 -> AS65001로 경로가 잡힘
+ B E      10.255.0.2/32 [200/0] via 10.0.21.2, Ethernet2
+ B E      10.255.0.4/32 [200/0] via 10.0.11.1, Ethernet1
+ B E      20.1.0.0/30 [200/0] via 10.0.11.1, Ethernet1
+ B E      20.2.0.0/30 [200/0] via 10.0.21.2, Ethernet2
+```
+정책 적용 후 **ROUTER_1**의 라우팅 테이블을 확인해보면 10.255.0.1은 인접 AS임에도 AS65002 -> AS65004를 경우해서 들어가도록 설정이 되어있다.
+
+---
+
+## 🔍 6. 통신 테스트 (traceroute)
+```java
+ROUTER-1#traceroute 10.255.0.1 source 10.255.0.3
+traceroute to 10.255.0.1 (10.255.0.1), 30 hops max, 60 byte packets
+ 1  10.0.21.2 (10.0.21.2)  12.740 ms  8.458 ms  16.785 ms
+ 2  10.0.22.1 (10.0.22.1)  24.672 ms  30.303 ms  33.501 ms
+ 3  10.255.0.1 (10.255.0.1)  41.069 ms  44.902 ms  48.791 ms
+
+----------------------------------------------------------------------------------------
+
+ROUTER-1#traceroute 20.1.0.2  source 10.255.0.3
+traceroute to 20.1.0.2 (20.1.0.2), 30 hops max, 60 byte packets
+ 1  10.0.11.1 (10.0.11.1)  22.736 ms  27.573 ms  30.810 ms
+ 2  20.1.0.2 (20.1.0.2)  34.116 ms * *
+```
+traceroute로 통신 테스트를 해보면 20.1.0.2는 바로 AS65001로 가는 것을 볼 수 있고, 10.255.0.1은 AS65002 -> AS65004를 경우해서 들어가는 것을 확인할 수 있다.
+
+
+
 
 
 
