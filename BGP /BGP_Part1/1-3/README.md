@@ -187,55 +187,36 @@ Neighbor        V    AS MsgRcvd MsgSent   TblVer  InQ OutQ Up/Down  State/PfxRcd
 10.255.0.1      4 65001     332     329      153    0    0 00:12:34 1 
 
 
-> AS끼리 정상적으로 BGP 세션을 맺은것을 확인할 수 있다.
+> 중간 라우터를 통과해서 AS끼리 정상적으로 BGP 세션을 맺은 것을 확인할 수 있다.
 
-## 📊 4. 광고 및 라우팅 테이블 확인
+## 📊 4. 라우팅 테이블 확인
 
 ```java
-BB-1# show ip bgp neighbors 10.0.11.2 advertised-routes 
+BB-1# show ip route bgp-65001 
+IP Route Table for VRF "default"
+'*' denotes best ucast next-hop
+'**' denotes best mcast next-hop
+'[x/y]' denotes [preference/metric]
+'%<string>' in via output denotes VRF <string>
 
-Peer 10.0.11.2 routes for address family IPv4 Unicast:
-BGP table version is 263, Local Router ID is 10.255.0.1
-Status: s-suppressed, x-deleted, S-stale, d-dampened, h-history, *-valid, >-best
-Path type: i-internal, e-external, c-confed, l-local, a-aggregate, r-redist, I-i
-njected
-Origin codes: i - IGP, e - EGP, ? - incomplete, | - multipath, & - backup, 2 - b
-est2
-
-   Network            Next Hop            Metric     LocPrf     Weight Path
-*>e10.0.12.0/30       10.0.12.2                                      0 65004 i # 외부피어에게 학습한 경로는 weight 0, i : IGP
-*>e10.0.22.0/30       10.0.12.2                                      0 65004 i
-*>l10.255.0.1/32      0.0.0.0                           100      32768 i       # 내가 만든 경로는 32786 weight 값을 가짐
-*>e10.255.0.4/32      10.0.12.2                                      0 65004 i
-*>l20.1.0.0/30        0.0.0.0                           100      32768 i
+20.2.0.0/30, ubest/mbest: 1/0
+    *via 10.255.0.2, [20/0], 00:56:56, bgp-65001, external, tag 65002
 
 ----------------------------------------------------------------------------------------
 
-ROUTER-1#show ip route bgp 
+BB-2# show ip route bgp
+IP Route Table for VRF "default"
+'*' denotes best ucast next-hop
+'**' denotes best mcast next-hop
+'[x/y]' denotes [preference/metric]
+'%<string>' in via output denotes VRF <string>
 
-VRF: default
-Codes: C - connected, S - static, K - kernel, 
-       O - OSPF, IA - OSPF inter area, E1 - OSPF external type 1,
-       E2 - OSPF external type 2, N1 - OSPF NSSA external type 1,
-       N2 - OSPF NSSA external type2, B - Other BGP Routes,
-       B I - iBGP, B E - eBGP, R - RIP, I L1 - IS-IS level 1,
-       I L2 - IS-IS level 2, O3 - OSPFv3, A B - BGP Aggregate,
-       A O - OSPF Summary, NG - Nexthop Group Static Route,
-       V - VXLAN Control Service, M - Martian,
-       DH - DHCP client installed default route,
-       DP - Dynamic Policy Route, L - VRF Leaked,
-       G  - gRIBI, RC - Route Cache Route
+20.1.0.0/30, ubest/mbest: 1/0
+    *via 10.255.0.1, [20/0], 00:57:32, bgp-65002, external, tag 65001
 
- B E      10.0.12.0/30 [200/0] via 10.0.11.1, Ethernet1
- B E      10.0.22.0/30 [200/0] via 10.0.11.1, Ethernet1
- B E      10.255.0.1/32 [200/0] via 10.0.11.1, Ethernet1 # AS65001에게 직접 광고를 받음
- B E      10.255.0.2/32 [200/0] via 10.0.21.2, Ethernet2 
- B E      10.255.0.4/32 [200/0] via 10.0.11.1, Ethernet1
- B E      20.1.0.0/30 [200/0] via 10.0.11.1, Ethernet1 # AS65001에게 직접 광고를 받음
- B E      20.2.0.0/30 [200/0] via 10.0.21.2, Ethernet2
 ```
 
-###  ✅ 광고 및 라우팅 테이블 분석
+###  ✅ 라우팅 테이블 분석
 
 B/B_1이 피어링을 맺은 10.0.11.2에게 확인을 해보면
 - *>l10.255.0.1/32      0.0.0.0                           100      32768 i
