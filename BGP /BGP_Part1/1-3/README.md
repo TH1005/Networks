@@ -279,7 +279,7 @@ IP Route Table for VRF "default"
 ```
 <img width="678" height="488" alt="image" src="https://github.com/user-attachments/assets/502e867f-d044-48e7-b86a-562d2ff3093f" />
 
-현재 라우팅테이블에서 보면 ubest : 2로 되어있어 최적의 경로가 2개로 잡혀있다. 또한 via 앞에 *표시가 되어있어 두 경로가 모두 활성화 된 상태이다. 이 두 경로로 모두 통신이 가능하지만 BGP는 세션을 맺을 때 Hash를 하여 1개의 경로로만 세션을 맺는다. 캡쳐된 패킷을 보면 현재 eth1(10.0.11.2) 방향으로 통신하여 세션을 맺고 있는 것을 볼 수 있다. 이제 eth1을 다운 시켜도 세션이 유지되는지 확인할 것이다.
+현재 라우팅테이블에서 보면 ubest : 2로 되어있어 최적의 경로가 2개로 잡혀있다. 또한 via 앞에 *표시가 되어있어 두 경로가 모두 활성화 된 상태이다. 이 두 경로로 모두 통신이 가능하지만 BGP 세션의 하나의 TCP 연결이므로 5tuple이 고정된다. 그렇기 때문에 다중경로에서 해싱으로 처리하여 트래픽을 분산하는  
 
 <img width="830" height="283" alt="image" src="https://github.com/user-attachments/assets/edcec89e-33b7-47ef-8d2d-89183f0d7cf9" />
 링크를 끊은 후에도 다른 경로인 eth2릍 통해서 KeepAlive 메세지를 주고 받으며 세션을 유지하고 있는 것을 확인 할 수 있다.
