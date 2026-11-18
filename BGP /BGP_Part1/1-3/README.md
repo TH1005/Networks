@@ -224,24 +224,36 @@ IP Route Table for VRF "default"
 
 ## 🔍 6. 통신 테스트 (traceroute)
 ```java
-ROUTER-1#traceroute 10.255.0.1 source 10.255.0.3
-traceroute to 10.255.0.1 (10.255.0.1), 30 hops max, 60 byte packets
- 1  10.0.21.2 (10.0.21.2)  12.740 ms  8.458 ms  16.785 ms
- 2  10.0.22.1 (10.0.22.1)  24.672 ms  30.303 ms  33.501 ms
- 3  10.255.0.1 (10.255.0.1)  41.069 ms  44.902 ms  48.791 ms
-
+BB-1# ping 20.2.0.1 source 10.255.0.1
+PING 20.2.0.1 (20.2.0.1) from 10.255.0.1: 56 data bytes
+64 bytes from 20.2.0.1: icmp_seq=0 ttl=253 time=21.715 ms
+64 bytes from 20.2.0.1: icmp_seq=1 ttl=253 time=14.179 ms
+64 bytes from 20.2.0.1: icmp_seq=2 ttl=253 time=22.296 ms
+64 bytes from 20.2.0.1: icmp_seq=3 ttl=253 time=16.944 ms
+64 bytes from 20.2.0.1: icmp_seq=4 ttl=253 time=16.478 ms
 ----------------------------------------------------------------------------------------
 
-ROUTER-1#traceroute 20.1.0.2  source 10.255.0.3
-traceroute to 20.1.0.2 (20.1.0.2), 30 hops max, 60 byte packets
- 1  10.0.11.1 (10.0.11.1)  22.736 ms  27.573 ms  30.810 ms
- 2  20.1.0.2 (20.1.0.2)  34.116 ms * *
+BB-2# ping 20.1.0.2 source 10.255.0.2
+PING 20.1.0.2 (20.1.0.2) from 10.255.0.2: 56 data bytes
+64 bytes from 20.1.0.2: icmp_seq=0 ttl=252 time=18.415 ms
+64 bytes from 20.1.0.2: icmp_seq=1 ttl=252 time=21.111 ms
+64 bytes from 20.1.0.2: icmp_seq=2 ttl=252 time=17.372 ms
+64 bytes from 20.1.0.2: icmp_seq=3 ttl=252 time=19.889 ms
+64 bytes from 20.1.0.2: icmp_seq=4 ttl=252 time=24.069 ms
 ```
-traceroute로 통신 테스트를 해보면 20.1.0.2는 바로 AS65001로 가는 것을 볼 수 있고, 10.255.0.1은 AS65002 -> AS65004를 경우해서 들어가는 것을 확인할 수 있다.
+ICMP로 통신을 해보면 루프백 IP를 Source로 하면 정상적으로 통신이 되는 것을 확인 할 수 있다.
 
+여기서 B/B_1은 20.2.0.0/30 네트워크로 가기 위해서 Next-Hop을 AS65002(10.255.0.2)로 잡고 있다. 하지만 AS65002는 직결된 라우터가 아니다. 패킷의 목적지는 20.2.0.1으로 설정이 되는데 B/B_1은 20.2.0.0/30의 정적 라우팅을 따로 추가해주지 않았다, 즉 20.2.0.0/30 으로 가기위해서 어떤 물리 인터페이스로 나가야 하는지 설정이 안되어있는 것이다. 그럼에도 통신이 되는 이유는 `재귀적 라우팅` 때문이다.
 
+재귀적 라우팅은 특정 목적지로 가기위한 Next-Hop이 직결된 인터페이스가 아닐 때, Next-Hop IP를 목적지를 삼아 다시 라우팅 테이블을 조회한다. 이 과정을 직결된 인터페이스를 찾을 때 까지 계속 반복한다.
+B/B_1에는 10.255.0.2로 가는 정적 라우팅이 잡혀있다. 결국 장비에서 10.255.0.2를 목적지 삼아서 직결된 Next-Hop을 찾아서 패킷을 포워딩 한 것이다. 
 
+<img width="678" height="282" alt="image" src="https://github.com/user-attachments/assets/1493c6e6-491c-45fe-b560-57fa5228a943" />
+<img width="493" height="79" alt="image" src="https://github.com/user-attachments/assets/18f963d8-f58d-4193-b8d5-b97c8901a91e" />
 
+캡쳐된 패킷과 B/B_1에 직결된 ROUTER_2의 인터페이스 MAC을 보면 동일한 것을 볼 수 있다. 20.2.0.2의 목적지는 10.255.0.2지만 실제로 패킷은 10.255.0.2로 가는 Next-Hop중 하나인 ROUTER_2의 MAC으로 포워딩 되고 있다. 여기서 ROUTER_2는 20.2.0.0/30로 가는 경로를 직결 인터페이스로하여 정적 라우팅을 추가 해줬기 때문에 10.255.0.2를 가진 B/B_2에 도달할 수 있는 것이다. 패킷의 목적지는 20.2.0.2기 때문에 중간 라우터에 20.2.0.0/30으로 가는 라우팅을 빼고 10.255.0.2로 가는 라우팅을 넣으면 통신이 되지 않는다.
+
+물론 20.2.0.2의 Next-Hop을 10.255.0.2로 설정하고 10.255.0.2의 Next-Hop을 직결 인터페이스로 하면 재귀적 라우팅을 조회하나 정적 라우팅을 그렇게 쓸 이유가 없다.
 
 
 
