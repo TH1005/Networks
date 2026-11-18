@@ -1,4 +1,4 @@
-<img width="678" height="488" alt="image" src="https://github.com/user-attachments/assets/15d0bc64-006f-44f5-b072-14e655caae47" /># 🌐 1. 고가용성을 위한 루프백으로 BGP Neighbor 맺기
+># 🌐 1. 고가용성을 위한 루프백으로 BGP Neighbor 맺기
 
 <img width="931" height="322" alt="image" src="https://github.com/user-attachments/assets/c1691207-f9e8-44d1-9997-e7b90d637632" />
 
