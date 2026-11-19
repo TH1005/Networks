@@ -15,6 +15,6 @@ Route-map과 경로 속성(Local-Pref, AS-Path Prepend 등)으로 BGP 경로 선
    - 4.1 광고가 외부로 나갈 때의 경로를 제어
    - 4.2 광고가 들어올 때 경로를 유도
    - 4.3 광고 정책의 충돌
-   - 4.4 Prefix 사용으로 광고 제어
+   - 4.4 Prefix로 정책 대상 선별
 
 
