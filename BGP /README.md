@@ -237,24 +237,3 @@ router bgp 65001
 
 ---
 
-## 📌 BGP 보안 이슈
-
-BGP는 설계 당시 **광고된 경로를 그대로 신뢰**하는 구조라 보안에 취약하다.
-
-### 🏴‍☠️ BGP Hijacking
-
-- 다른 AS가 소유한 IP 대역을 **자기 것인 것처럼 광고**해서 트래픽을 가로채는 공격이다
-- 유형
-  - **Origin 위조**: 남의 Prefix를 자기 AS 시작으로 광고
-  - **More Specific 광고**: 원래 `/22`인 대역을 `/24`로 쪼개 광고 → **Longest Prefix Match** 때문에 더 구체적인 경로가 우선됨
-- 사례: 2008년 파키스탄 ISP가 YouTube 대역을 잘못 광고해 전 세계 YouTube 접속이 장애를 겪음
-
-### 📌 대응 방법
-
-| 방법 | 설명 |
-|---|---|
-| **Prefix Filtering** | 고객/Peer가 광고할 수 있는 Prefix만 허용 |
-| **RPKI / ROA** | Prefix의 정당한 소유 AS를 암호학적으로 검증 (Route Origin Validation) |
-| **MD5 / TCP-AO 인증** | Peer 세션 자체를 인증해 세션 탈취 방지 |
-| **maximum-prefix** | 비정상적으로 많은 경로 유입 차단 |
-| **GTSM (TTL Security)** | 직접 연결된 Peer에서 온 패킷만 허용 (TTL 255 검사) |
