@@ -11,4 +11,10 @@
    - 특정 물리 인터페이스 장애 시에도 BGP 세션을 유지하기 위해, 논리적 인터페이스인 루프백(Loopback) 주소로 네이버를 변경하여 고가용성을 확보
 
 **4. BGP 정책제어**
-   - Route-map과 경로 속성(Local-Pref, AS-Path Prepend 등)으로 BGP 경로 선택과 광고를 제어
+Route-map과 경로 속성(Local-Pref, AS-Path Prepend 등)으로 BGP 경로 선택과 광고를 제어
+   - 4.1 광고가 외부로 나갈 때의 경로를 제어
+   - 4.2 광고가 들어올 때 경로를 유도
+   - 4.3 광고 정책의 충돌
+   - 4.4 Prefix 사용으로 광고 제어
+
+
