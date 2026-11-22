@@ -1,4 +1,4 @@
-# 4-1 인바운드 경로 제어 (AS-Path Prepend & MED)
+# 4-1 인바운드 경로 제어 (AS-Path Prepend)
 
 BGP는 같은 목적지에 대해 여러 경로를 광고받으면, 정해진 순서의 속성 비교를 통해 **best path** 하나를 선정한다. 
 내가 이웃에게 아무 정책 없이 광고를 보내면 상대는 기본 규칙으로 경로를 고르므로, 나에게 들어오는 트래픽이 내가 의도한 경로로 오지 않을 수 있다.
@@ -14,6 +14,7 @@ Prepend는 이웃에게 라우팅 광고를 할 때 의도적으로 AS Path의 �
 
 ## 1.1. 구성도 
 <img width="914" height="513" alt="image" src="https://github.com/user-attachments/assets/7b63f32d-953b-45d5-8b24-0efb49ec7568" />
+
 4개의 외부 라우터가 있으며 각각의 AS를 가지고 인접 라우터와 피어링을 맺은 상태, `AS65001`과 `AS65002`는 자신이 가진 2개의 네트워크 대역도 광고를 하고있다.
 
 <br>
@@ -80,8 +81,27 @@ op
 
   Path-id 1 advertised to peers:
     10.0.22.1
+
+-----------------------------------------------------------------------------------------
+
+ROUTER-2#show ip bgp 20.1.0.0
+BGP routing table information for VRF default
+Router identifier 10.255.0.4, local AS number 65004
+BGP routing table entry for 20.1.0.0/30
+ Paths: 2 available
+  65002 65003 65001
+    10.0.22.2 from 10.0.22.2 (10.255.0.2)
+      Origin IGP, metric 0, localpref 100, IGP metric 1, weight 0, received 01:45:33 ago, valid, external, best
+      Rx SAFI: Unicast
+  65001 65001 65001 65001
+    10.0.12.1 from 10.0.12.1 (10.255.0.1)
+      Origin IGP, metric 0, localpref 100, IGP metric 1, weight 0, received 05:55:38 ago, valid, external
+      Rx SAFI: Unicast
 ```
 
 ---
 
 위 출력에서 localpref 100, weight 0는 모두 기본값이다. 따라서 AS65002 입장에서 AS65001이 광고하는 20.1.0.0/30으로 가는 경로는 두 개중 AS Path가 더 짧은 10.0.21.1(AS65003 경유)이 **best path**로 선택되었다. AS-path 를 확인해보면 별도의 설정이 없는 `AS65003` 방향은 65003 65001로 설정이 되어있지만 **Prepend** 설정을 추가한 `AS65004` 방향은 `65004 65001 65001 65001 65001` 로 설정이 되어있다. `path is valid, not best reason: AS Path`로 출력이 되는 것으로 보아 경로는 유효하지만 AS-Path 우선순위에 밀려 best path로 선정되지 않은 것이다. 
+
+또한 `AS65003`에서 직결된 라우터인 `AS65001`의 네트워크 20.1.0.0/30으로 가는 경로를 보면 직결임에도 **Prepend**
+설정 때문에 **AS path**가 `65001 65001 65001 65001`로 인식이 되고 있다. 이에 **AS Path**가 `65002 65003 65001`로 더 짧은 경로인 `AS65002`로 통신 하는 경로가 **best path**로 선정되있다. 
